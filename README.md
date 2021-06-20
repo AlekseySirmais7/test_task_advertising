@@ -18,7 +18,7 @@
 
 ### Архитектура
 
-![arch](architecture.png)
+![arch](./architecture.png)
 
 ### Документация
 
@@ -37,7 +37,7 @@
 
 ### Swagger файл: ```/readMeFiles/swagger.json```
 
-![swagger](swagger.png)
+![swagger](./swagger.png)
 
 
 ### Примеры запросов
