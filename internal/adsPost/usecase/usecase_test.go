@@ -5,61 +5,63 @@ import (
 	"github.com/stretchr/testify/require"
 	"strconv"
 	"strings"
+	"test_task_advertising/internal/adsPost/constants"
+	"test_task_advertising/internal/adsPost/mocks"
 	"test_task_advertising/internal/errorsConst"
 	"test_task_advertising/internal/models"
-	"test_task_advertising/internal/pkg/adsPost/mocks"
+	loggerZap "test_task_advertising/internal/pkg/logger"
 	"testing"
 )
 
 func TestCreateAdsPost(t *testing.T) {
 
 	type TestCase struct {
-		post   models.AdsPost
-		postId models.AdsPostId
+		post   *models.AdsPost
+		postId *models.AdsPostId
 		err    error
 	}
 
 	t.Parallel()
-
-	useCase := NewUseCase(mocks.AdsPostRepositoryMock{})
+	logger := loggerZap.NewLogger("INFO")
+	useCase := NewUseCase(mocks.AdsPostRepositoryMock{}, logger)
 
 	cases := []TestCase{
 		{
-			post: models.AdsPost{Photos: []string{"1"}, Title: "cat",
+			post: &models.AdsPost{Photos: []string{"1"}, Title: "cat",
 				Description: "cat"},
-			postId: models.AdsPostId{Id: 1},
+			postId: &models.AdsPostId{Id: 1},
 			err:    nil,
 		},
 		{
-			post:   models.AdsPost{Photos: []string{"1", "2", "3", "4"}, Title: "cat", Description: "cat"},
-			postId: models.AdsPostId{},
+			post:   &models.AdsPost{Photos: []string{"1", "2", "3", "4"}, Title: "cat", Description: "cat"},
+			postId: &models.AdsPostId{},
 			err:    errors.New(errorsConst.BAD_COUNT_OF_PHOTO_LINKS),
 		},
 		{
-			post:   models.AdsPost{Photos: []string{}, Title: "cat", Description: "cat"},
-			postId: models.AdsPostId{},
+			post:   &models.AdsPost{Photos: []string{}, Title: "cat", Description: "cat"},
+			postId: &models.AdsPostId{},
 			err:    errors.New(errorsConst.BAD_COUNT_OF_PHOTO_LINKS),
 		},
 		{
-			post:   models.AdsPost{Photos: []string{"1", "2"}, Title: "cat", Description: "=("},
-			postId: models.AdsPostId{},
+			post:   &models.AdsPost{Photos: []string{"1", "2"}, Title: "cat", Description: "=("},
+			postId: &models.AdsPostId{},
 			err:    errors.New(errorsConst.BAD_DESCRIPTION_LENGTH),
 		},
 		{
-			post: models.AdsPost{Photos: []string{"1", "2"}, Title: "cat",
+			post: &models.AdsPost{Photos: []string{"1", "2"}, Title: "cat",
 				Description: strings.Repeat("tenSymbols", 101)},
-			postId: models.AdsPostId{},
+			postId: &models.AdsPostId{},
 			err:    errors.New(errorsConst.BAD_DESCRIPTION_LENGTH),
 		},
 		{
-			post:   models.AdsPost{Photos: []string{"1", "2"}, Title: "", Description: "cat"},
-			postId: models.AdsPostId{},
+			post:   &models.AdsPost{Photos: []string{"1", "2"}, Title: "", Description: "cat"},
+			postId: &models.AdsPostId{},
 			err:    errors.New(errorsConst.BAD_TITLE_LENGTH),
 		},
 		{
-			post: models.AdsPost{Photos: []string{"1", "2"}, Title: strings.Repeat("tenSymbols", 21),
+			post: &models.AdsPost{Photos: []string{"1", "2"}, Title: strings.Repeat("tenSymbols", 21),
 				Description: "cat"},
-			postId: models.AdsPostId{},
+			postId: &models.AdsPostId{},
 			err:    errors.New(errorsConst.BAD_TITLE_LENGTH),
 		},
 	}
@@ -68,21 +70,12 @@ func TestCreateAdsPost(t *testing.T) {
 
 		caseNumLabel := "Case №" + strconv.Itoa(caseNum+1)
 
-		postId, err := useCase.CreateAdsPost(&item.post)
+		postId, err := useCase.CreateAdsPost(item.post)
 
 		require.Equal(t, item.postId, postId, caseNumLabel)
 
 		require.Equal(t, item.err, err, caseNumLabel)
 
-		//if !reflect.DeepEqual(postId, item.postId) {
-		//	t.Errorf("[%d] wrong result: got %+v, expected %+v",
-		//		caseNum, postId, item.postId)
-		//}
-		//
-		//if !require.Equal(err, item.err) {
-		//	t.Errorf("[%d] wrong err: got %+v, expected %+v",
-		//		caseNum, err, item.err)
-		//}
 	}
 
 }
@@ -91,28 +84,29 @@ func TestGetAdsPost(t *testing.T) {
 
 	type TestCase struct {
 		postReqParams models.AdsPostRequest
-		post          models.AdsPost
+		post          *models.AdsPost
 		err           error
 	}
 
 	t.Parallel()
 
-	useCase := NewUseCase(mocks.AdsPostRepositoryMock{})
+	logger := loggerZap.NewLogger("INFO")
+	useCase := NewUseCase(mocks.AdsPostRepositoryMock{}, logger)
 
 	cases := []TestCase{
 		{
-			postReqParams: models.AdsPostRequest{Id: 1, Fields: []string{"photos", "description"}},
-			post:          models.AdsPost{Id: 1},
+			postReqParams: models.AdsPostRequest{Id: 1, Fields: []string{constants.PHOTOS_FIELD, constants.DESCRIPTION_FIELD}},
+			post:          &models.AdsPost{Id: 1},
 			err:           nil,
 		},
 		{
 			postReqParams: models.AdsPostRequest{Id: 1, Fields: []string{"BAD FIELD"}},
-			post:          models.AdsPost{},
+			post:          &models.AdsPost{},
 			err:           errors.New(errorsConst.BAD_REQUESTED_FIELDS),
 		},
 		{
-			postReqParams: models.AdsPostRequest{Id: 1, Fields: []string{"photos", "photos"}},
-			post:          models.AdsPost{},
+			postReqParams: models.AdsPostRequest{Id: 1, Fields: []string{constants.PHOTOS_FIELD, constants.PHOTOS_FIELD}},
+			post:          &models.AdsPost{},
 			err:           errors.New(errorsConst.BAD_REQUESTED_UNIQUE_FIELDS),
 		},
 	}
@@ -140,7 +134,8 @@ func TestGetAdsPostArr(t *testing.T) {
 
 	t.Parallel()
 
-	useCase := NewUseCase(mocks.AdsPostRepositoryMock{})
+	logger := loggerZap.NewLogger("INFO")
+	useCase := NewUseCase(mocks.AdsPostRepositoryMock{}, logger)
 
 	cases := []TestCase{
 		{

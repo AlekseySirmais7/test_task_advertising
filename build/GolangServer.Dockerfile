@@ -12,6 +12,9 @@ MAINTAINER Alex Sirmais
 WORKDIR /app
 COPY --from=build /main .
 RUN chmod +x ./main
+COPY ./build/config.json /app
+
+RUN ls -l /app
 
 EXPOSE 8080/tcp
 

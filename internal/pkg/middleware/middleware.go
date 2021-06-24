@@ -1,10 +1,15 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
 	"log"
+	"math/rand"
 	"net/http"
+	"test_task_advertising/internal/constants"
 	"test_task_advertising/internal/models"
+	"time"
 )
 
 func CORS(next echo.HandlerFunc) echo.HandlerFunc {
@@ -31,6 +36,30 @@ func PanicMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 				}
 				return
 			}
+		}()
+		return next(ctx)
+	}
+}
+
+type MiddlewareWithLogger struct {
+	Logger *zap.Logger
+}
+
+func (ml *MiddlewareWithLogger) LogMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+
+		start := time.Now()
+		requestId := fmt.Sprintf("%016x", rand.Int())[:10]
+		ctx.Set(constants.REQUEST_ID_KEY, requestId)
+
+		defer func() {
+			ml.Logger.Info(ctx.Path(),
+				zap.String("RequestId:", requestId),
+				zap.String("Method:", ctx.Request().Method),
+				zap.String("RemoteAddr:", ctx.Request().RemoteAddr),
+				zap.Time("StartTime:", start),
+				zap.Duration("DurationTime:", time.Since(start)),
+			)
 		}()
 		return next(ctx)
 	}

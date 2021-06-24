@@ -7,22 +7,27 @@ import (
 	"github.com/lib/pq"
 	"log"
 	"sort"
+	"strconv"
 	"strings"
+	"test_task_advertising/internal/adsPost"
+	"test_task_advertising/internal/adsPost/constants"
 	"test_task_advertising/internal/errorsConst"
 	"test_task_advertising/internal/models"
-	"test_task_advertising/internal/pkg/adsPost"
+	"test_task_advertising/internal/pkg/config"
 )
 
 type AdsPostRepository struct {
 	adsPostCon *sql.DB
 }
 
-func NewAdsPostRepository(postgresConnStr string, ConnectionCount int) (adsPost.IRepository, error) {
+func NewAdsPostRepository(config config.DataBaseConfig) (adsPost.IRepository, error) {
+	postgresConnStr := "user=" + config.User + " password=" + config.Password +
+		" dbname=" + config.Database + " sslmode=disable port=" + strconv.Itoa(config.Port) + " host=" + config.Host
 	postgresDB, err := sql.Open("postgres", postgresConnStr)
 	if err != nil {
 		return AdsPostRepository{}, err
 	}
-	postgresDB.SetMaxOpenConns(ConnectionCount)
+	postgresDB.SetMaxOpenConns(config.ConnectionCount)
 
 	errPing := postgresDB.Ping()
 	if errPing != nil {
@@ -34,13 +39,10 @@ func NewAdsPostRepository(postgresConnStr string, ConnectionCount int) (adsPost.
 
 func (ar AdsPostRepository) CloseAdsPost() error {
 	errClose := ar.adsPostCon.Close()
-	if errClose != nil {
-		return errClose
-	}
-	return nil
+	return errClose
 }
 
-func (ar AdsPostRepository) CreateAdsPost(adsPost *models.AdsPost) (models.AdsPostId, error) {
+func (ar AdsPostRepository) CreateAdsPost(adsPost *models.AdsPost) (*models.AdsPostId, error) {
 
 	queryRusTable := sq.Insert("AdsPosts").
 		Columns("title", "description", "photos", "price", "date").
@@ -53,15 +55,15 @@ func (ar AdsPostRepository) CreateAdsPost(adsPost *models.AdsPost) (models.AdsPo
 	err := queryRusTable.QueryRow().Scan(&adsPostId.Id)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint \"adsposts_title_key\"") {
-			return adsPostId, errors.New(errorsConst.CONFLICT_UNIQUE_POST)
+			return &adsPostId, errors.New(errorsConst.CONFLICT_UNIQUE_POST)
 		}
-		return models.AdsPostId{}, err
+		return &models.AdsPostId{}, err
 	}
 
-	return adsPostId, nil
+	return &adsPostId, nil
 }
 
-func (ar AdsPostRepository) GetAdsPost(id uint64, fields []string) (models.AdsPost, error) {
+func (ar AdsPostRepository) GetAdsPost(id uint64, fields []string) (*models.AdsPost, error) {
 
 	selectedFields := []string{"id", "title", "price", "to_char(date, 'HH:mm:ss DD-MM-YYYY')"}
 	isNeedSelectAllPhotos := false
@@ -69,15 +71,18 @@ func (ar AdsPostRepository) GetAdsPost(id uint64, fields []string) (models.AdsPo
 
 	functionalFields := make([]string, 0, len(fields))
 	for _, field := range fields {
-		if field == "photos" { // it's ok to check twice (in useCase and in repo)
+
+		switch field {
+		case constants.PHOTOS_FIELD: // it's ok to check twice (in useCase and in repo)
 			functionalFields = append(functionalFields, field) // funcs have to check contracts
 			isNeedSelectAllPhotos = true
-		} else if field == "description" {
+		case constants.DESCRIPTION_FIELD:
 			functionalFields = append(functionalFields, field)
 			isNeedSelectDescription = true
-		} else {
-			return models.AdsPost{}, errors.New(errorsConst.BAD_REQUESTED_FIELDS)
+		default:
+			return &models.AdsPost{}, errors.New(errorsConst.BAD_REQUESTED_FIELDS)
 		}
+
 	}
 
 	if !isNeedSelectAllPhotos { // always need first photo
@@ -109,11 +114,11 @@ func (ar AdsPostRepository) GetAdsPost(id uint64, fields []string) (models.AdsPo
 	if err != nil {
 
 		if strings.Contains(err.Error(), "no rows in result set") {
-			return post, errors.New(errorsConst.NOT_HAVE_POST_WITH_THIS_ID)
+			return &post, errors.New(errorsConst.NOT_HAVE_POST_WITH_THIS_ID)
 		}
-		return post, err
+		return &post, err
 	}
-	return post, nil
+	return &post, nil
 }
 
 func (ar AdsPostRepository) GetAdsPostArr(start uint64, count uint64, sort string, desc bool) ([]models.AdsPostArrItem, error) {
@@ -130,6 +135,8 @@ func (ar AdsPostRepository) GetAdsPostArr(start uint64, count uint64, sort strin
 		PlaceholderFormat(sq.Dollar).
 		RunWith(ar.adsPostCon)
 
+	// make capacity = count. if select post count less than count(not enough posts in DB), we spend extra memory,
+	// but I suppose that in 90% cases we use full memory
 	posts := make([]models.AdsPostArrItem, 0, count)
 	rows, err := querySelect.Query()
 	if err != nil {

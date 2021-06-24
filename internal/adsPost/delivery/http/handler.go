@@ -4,9 +4,9 @@ import (
 	"github.com/labstack/echo"
 	"github.com/mailru/easyjson"
 	"net/http"
+	"test_task_advertising/internal/adsPost"
 	"test_task_advertising/internal/errorsConst"
 	"test_task_advertising/internal/models"
-	"test_task_advertising/internal/pkg/adsPost"
 )
 
 type AdsPostHandler struct {

@@ -8,7 +8,9 @@ require (
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/lib/pq v1.10.2
 	github.com/mailru/easyjson v0.7.7
-	github.com/stretchr/testify v1.4.0
+	github.com/spf13/viper v1.8.0
+	github.com/stretchr/testify v1.7.0
+	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
 )

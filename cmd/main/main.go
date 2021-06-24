@@ -4,24 +4,30 @@ import (
 	"github.com/labstack/echo"
 	_ "github.com/lib/pq"
 	"log"
-	adsPostDelivery "test_task_advertising/internal/pkg/adsPost/delivery/http"
-	"test_task_advertising/internal/pkg/adsPost/repository/postgres"
-	"test_task_advertising/internal/pkg/adsPost/usecase"
+	"test_task_advertising/internal/adsPost/delivery/http"
+	"test_task_advertising/internal/adsPost/repository/postgres"
+	"test_task_advertising/internal/adsPost/usecase"
+	"test_task_advertising/internal/pkg/config"
+	loggerZap "test_task_advertising/internal/pkg/logger"
 	"test_task_advertising/internal/pkg/middleware"
+	"time"
 )
 
-// todo read conf file
+// todo add server config file like DB config
 const (
-	postgresConnStr         = "user=docker password=docker dbname=myService sslmode=disable port=5432 host=pg"
-	postgresConnectionCount = 10
-	goServerPortStr         = ":8080"
-	apiStr                  = "/api/v1"
+	goServerPortStr = ":8080"
+	apiStr          = "/api/v1"
+	logLvl          = "INFO"
 )
 
 func main() {
 
-	// connect postgreSQL
-	adsPostRepoPostgres, errConnect := postgres.NewAdsPostRepository(postgresConnStr, postgresConnectionCount)
+	confDB, err := config.GetDBConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	adsPostRepoPostgres, errConnect := postgres.NewAdsPostRepository(confDB)
 	if errConnect != nil {
 		log.Fatal(errConnect)
 	}
@@ -33,20 +39,29 @@ func main() {
 	}()
 	log.Println("PostgreSQL connect successfully")
 
-	adsPostUseCase := usecase.NewUseCase(adsPostRepoPostgres)
+	logger := loggerZap.NewLogger(logLvl)
 
-	adsPostHandler := adsPostDelivery.AdsPostHandler{AdsPostUseCase: adsPostUseCase}
+	adsPostUseCase := usecase.NewUseCase(adsPostRepoPostgres, logger)
+
+	adsPostHandler := http.AdsPostHandler{AdsPostUseCase: adsPostUseCase}
 
 	e := echo.New()
 
+	middlewareWithLogger := middleware.MiddlewareWithLogger{Logger: logger}
+
 	// middleware
 	e.Use(middleware.PanicMiddleware)
+	e.Use(middlewareWithLogger.LogMiddleware)
 	e.Use(middleware.CORS)
 
 	// ads posts
 	e.POST(apiStr+"/adsPost", adsPostHandler.CreateAdsPost)
 	e.GET(apiStr+"/adsPost", adsPostHandler.GetAdsPost)
 	e.GET(apiStr+"/adsPosts", adsPostHandler.GetAdsPostArr)
+
+	// better set timeout and CORS in nginx
+	e.Server.ReadTimeout = time.Second * 10
+	e.Server.WriteTimeout = time.Second * 10
 
 	log.Fatal(e.Start(goServerPortStr))
 }
