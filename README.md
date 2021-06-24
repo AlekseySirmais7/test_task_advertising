@@ -17,7 +17,7 @@
 
 ### Описание работы
 
-### Архитектура
+### Архитектура (architecture.png)
 
 ![arch](./architecture.png)
 
@@ -42,6 +42,7 @@
 
 
 ### Swagger файл: ```/readMeFiles/swagger.json```
+(swagger.png)
 
 ![swagger](./swagger.png)
 
