@@ -1,0 +1,275 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Создание и просмотр объявлений.",
+    "version": "1.0.0",
+    "title": "Test task",
+    "contact": {
+      "email": "alexeisirmais7@yandex.ru"
+    }
+  },
+  "basePath": "/api/v1",
+  "tags": [
+    {
+      "name": "adsPost",
+      "description": "Посты объявлений"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/adsPosts": {
+      "get": {
+        "tags": [
+          "adsPost"
+        ],
+        "summary": "Get posts",
+        "description": "Get posts, has sort by date, price. Has DESC option.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Select parameteters",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GetPostsParameters"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PostItem"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad sort parameters or too big count (max is 10)"
+          }
+        }
+      }
+    },
+    "/adsPost": {
+      "get": {
+        "tags": [
+          "adsPost"
+        ],
+        "summary": "Get one post",
+        "description": "Get one post with post info",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Post id, requested fields",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GetOnePostParameters"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/Post"
+            }
+          },
+          "400": {
+            "description": "Bad requested field or not unique fields"
+          },
+          "404": {
+            "description": "Post not found"
+          }
+        }
+      }
+    },
+    "/adsPost ": {
+      "post": {
+        "tags": [
+          "adsPost"
+        ],
+        "summary": "Create post",
+        "description": "Create post",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Post info",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PostCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful creation returns new post id",
+            "schema": {
+              "$ref": "#/definitions/PostId"
+            }
+          },
+          "400": {
+            "description": "Bad photo link count, bad length of title or description"
+          },
+          "409": {
+            "description": "Post title conflict"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "PostCreate": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "length [3,200]"
+        },
+        "description": {
+          "type": "string",
+          "description": "length [3,1000]"
+        },
+        "price": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "photos": {
+          "description": "Array of photo links, count [1, 3]",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "PostId": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Created post id",
+          "format": "int64"
+        }
+      }
+    },
+    "GetPostsParameters": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "description": "count of already received posts",
+          "format": "int64"
+        },
+        "count": {
+          "type": "integer",
+          "description": "count of requested posts (<=10)",
+          "format": "int64"
+        },
+        "sort": {
+          "type": "string",
+          "description": "sort field",
+          "format": "int64"
+        },
+        "desc": {
+          "type": "boolean",
+          "description": "is DESC"
+        }
+      }
+    },
+    "PostItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "price": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "photo": {
+          "description": "First photo",
+          "type": "string"
+        }
+      }
+    },
+    "GetOnePostParameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "fields": {
+          "type": "array",
+          "description": "needed fields, [description, photos]",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Post": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "photos": {
+          "description": "Array of photo links",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "date": {
+          "type": "string",
+          "description": "Created time"
+        }
+      }
+    },
+    "Response": {
+      "type": "object",
+      "description": "All requests return this struct. Body is api response.",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "description": "response code",
+          "format": "int32"
+        },
+        "msg": {
+          "type": "string",
+          "description": "Some msg about code"
+        },
+        "body": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

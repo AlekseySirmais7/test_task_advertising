@@ -1,0 +1,18 @@
+{
+  "db": {
+    "host":     "pg",
+    "port":     5432,
+    "database": "myService",
+    "user":     "docker",
+    "password": "docker",
+    "connectionCount": 10
+  },
+  "test": {
+    "host":     "127.0.0.1",
+    "port":      5432,
+    "database": "myService",
+    "user":     "docker",
+    "password": "docker",
+    "connectionCount": 5
+  }
+}

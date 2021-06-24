@@ -1,0 +1,33 @@
+version: '3'
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: build/GolangServer.Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      - pg
+    restart: always
+
+
+  nginx:
+    build:
+      context: ./build/nginx
+      dockerfile: ./Dockerfile
+    ports:
+      - 80:80
+    depends_on:
+      - app
+    restart: always
+
+
+  pg:
+    build: ./build/postgres
+    ports:
+      - 5432:5432
+    container_name: "postgres"
+    volumes:
+      - /home/pg_data:/var/lib/postgresql/data/pgdata
+    restart: always
