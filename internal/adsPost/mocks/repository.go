@@ -19,6 +19,5 @@ func (a AdsPostRepositoryMock) GetAdsPostArr(start uint64, count uint64, sort st
 	return []models.AdsPostArrItem{{Id: 1}, {Id: 2}, {Id: 3}}, nil
 }
 
-func (a AdsPostRepositoryMock) CloseAdsPost() error {
-	return nil
+func (a AdsPostRepositoryMock) CloseAdsPost() {
 }

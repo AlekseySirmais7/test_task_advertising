@@ -31,12 +31,7 @@ func main() {
 	if errConnect != nil {
 		log.Fatal(errConnect)
 	}
-	defer func() {
-		errClose := adsPostRepoPostgres.CloseAdsPost()
-		if errClose != nil {
-			log.Fatal(errClose)
-		}
-	}()
+	defer adsPostRepoPostgres.CloseAdsPost()
 	log.Println("PostgreSQL connect successfully")
 
 	logger := loggerZap.NewLogger(logLvl)

@@ -43,12 +43,7 @@ func TestCreateAdsPostAndGetAdsPost(t *testing.T) {
 		log.Println("TEST REPO, IS TEST DATABASE RUNNING?")
 		log.Fatal(err)
 	}
-	defer func() {
-		errClose := repo.CloseAdsPost()
-		if errClose != nil {
-			log.Fatal(errClose)
-		}
-	}()
+	defer repo.CloseAdsPost()
 
 	testCase := TestCase{
 		post: &models.AdsPost{Title: "testTitle" + time.Now().String(), Description: "some descp", Price: 123,
@@ -129,12 +124,7 @@ func TestGetAdsPostArr(t *testing.T) {
 		log.Println("TEST REPO, IS TEST DATABASE RUNNING?")
 		log.Fatal(err)
 	}
-	defer func() {
-		errClose := repo.CloseAdsPost()
-		if errClose != nil {
-			log.Fatal(errClose)
-		}
-	}()
+	defer repo.CloseAdsPost()
 
 	createForSelectPosts := []models.AdsPost{
 		{Title: "testTitle_1 " + time.Now().String(), Description: "some descp", Price: 22, Photos: []string{"link1"}},
